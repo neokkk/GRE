@@ -10,7 +10,7 @@
 	url = https://github.com/pohchaichon/ARTSynchronized.git
 [submodule "src/competitor/lipp/src"]
 	path = src/competitor/lipp/src
-	url = https://github.com/pohchaichon/lipp
+	url = https://github.com/neokkk/lipp.git
 	branch = main
 [submodule "src/competitor/lippolc/src"]
 	path = src/competitor/lippol/src
