@@ -8,10 +8,6 @@
 [submodule "src/competitor/artsync/src"]
 	path = src/competitor/artsync/src
 	url = https://github.com/pohchaichon/ARTSynchronized.git
-[submodule "src/competitor/lipp/src"]
-	path = src/competitor/lipp/src
-	url = https://github.com/neokkk/lipp.git
-	branch = main
 [submodule "src/competitor/lippolc/src"]
 	path = src/competitor/lippol/src
 	url = https://github.com/eric-lo/lippolc.git
