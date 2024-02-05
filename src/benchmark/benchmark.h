@@ -45,8 +45,8 @@ class Benchmark {
     double init_table_ratio;
     double del_table_ratio;
     size_t thread_num = 1;
-    std::vector <std::string> all_index_type;
-    std::vector <std::string> all_thread_num;
+    std::vector<std::string> all_index_type;
+    std::vector<std::string> all_thread_num;
     std::string index_type;
     std::string keys_file_path;
     std::string keys_file_type;
@@ -60,10 +60,10 @@ class Benchmark {
     bool dataset_statistic;
     bool data_shift = false;
 
-    std::vector <KEY_TYPE> init_keys;
+    std::vector<KEY_TYPE> init_keys;
     KEY_TYPE *keys;
-    std::pair <KEY_TYPE, PAYLOAD_TYPE> *init_key_values;
-    std::vector <std::pair<Operation, KEY_TYPE>> operations;
+    std::pair<KEY_TYPE, PAYLOAD_TYPE> *init_key_values;
+    std::vector<std::pair<Operation, KEY_TYPE>> operations;
     std::mt19937 gen;
 
     struct Stat {
@@ -106,10 +106,9 @@ public:
 
     KEY_TYPE *load_keys() {
         // Read keys from file
-        COUT_THIS("Reading data from file.");
+        COUT_THIS("Reading data from file");
 
         if (table_size > 0) keys = new KEY_TYPE[table_size];
-
 
         if (keys_file_type == "binary") {
             table_size = load_binary_data(keys, table_size, keys_file_path);
@@ -136,15 +135,10 @@ public:
         }
 
         init_table_size = init_table_ratio * table_size;
-        std::cout << "Table size is " << table_size << ", Init table size is " << init_table_size << std::endl;
-
-        for (auto j = 0; j < 10; j++) {
-            std::cout << keys[j] << " ";
-        }
-        std::cout << std::endl;
 
         // prepare data
-        COUT_THIS("prepare init keys.");
+        COUT_THIS("Prepare init keys");
+
         init_keys.resize(init_table_size);
 #pragma omp parallel for num_threads(thread_num)
         for (size_t i = 0; i < init_table_size; ++i) {
@@ -174,7 +168,7 @@ public:
         // deal with the background thread case
         thread_num = param.worker_num;
 
-        COUT_THIS("bulk loading");
+        COUT_THIS("Bulk loading");
         index->bulk_load(init_key_values, init_keys.size(), &param);
     }
 
@@ -225,7 +219,7 @@ public:
         dataset_statistic = get_boolean_flag(flags, "dataset_statistic");
         data_shift = get_boolean_flag(flags, "data_shift");
 
-        COUT_THIS("[micro] Read:Insert:Update:Scan:Delete= " << read_ratio << ":" << insert_ratio << ":" << update_ratio << ":"
+        COUT_THIS("[Micro] Read:Insert:Update:Scan:Delete= " << read_ratio << ":" << insert_ratio << ":" << update_ratio << ":"
                                                       << scan_ratio << ":" << delete_ratio);
         double ratio_sum = read_ratio + insert_ratio + delete_ratio + update_ratio + scan_ratio;
         double insert_delete = insert_ratio + delete_ratio;
@@ -235,12 +229,12 @@ public:
         INVARIANT(all_thread_num.size() > 0);
     }
 
-
     void generate_operations(KEY_TYPE *keys) {
         // prepare operations
         operations.reserve(operations_num);
-        COUT_THIS("sample keys.");
+        COUT_THIS("Sample keys");
         KEY_TYPE *sample_ptr = nullptr;
+
         if (sample_distribution == "uniform") {
             sample_ptr = get_search_keys(&init_keys[0], init_table_size, operations_num, &random_seed);
         } else if (sample_distribution == "zipf") {
@@ -248,14 +242,15 @@ public:
         }
 
         // generate operations(read, insert, update, scan)
-        COUT_THIS("generate operations.");
+        COUT_THIS("Generate operations");
         std::uniform_real_distribution<> ratio_dis(0, 1);
-        size_t sample_counter = 0, insert_counter = init_table_size;
+        size_t sample_counter = 0;
+        size_t insert_counter = init_table_size;
         size_t delete_counter = table_size * (1 - del_table_ratio);
 
         if (data_shift) {
             size_t rest_key_num = table_size - init_table_size;
-            if(rest_key_num > 0) {
+            if (rest_key_num > 0) {
                 std::sort(keys + init_table_size, keys + table_size);
                 std::random_shuffle(keys + init_table_size, keys + table_size);
             }
@@ -301,9 +296,12 @@ public:
         param_t params[thread_num];
         TSCNS tn;
         tn.init();
+        
         printf("Begin running\n");
+
         auto start_time = tn.rdtsc();
         auto end_time = tn.rdtsc();
+        
     //    System::profile("perf.data", [&]() {
 #pragma omp parallel num_threads(thread_num)
         {
@@ -318,7 +316,8 @@ public:
             thread_param.latency.reserve(operations_num / latency_sample_interval);
             // Operation Parameter
             PAYLOAD_TYPE val;
-            std::pair <KEY_TYPE, PAYLOAD_TYPE> *scan_result = new std::pair<KEY_TYPE, PAYLOAD_TYPE>[scan_num];
+            std::pair<KEY_TYPE, PAYLOAD_TYPE> *scan_result = new std::pair<KEY_TYPE, PAYLOAD_TYPE>[scan_num];
+
             // waiting all thread ready
 #pragma omp barrier
 #pragma omp master
@@ -334,11 +333,11 @@ public:
 
                 if (op == READ) {  // get
                     auto ret = index->get(key, val, &paramI);
-                    // if(!ret) {
+                    // if (!ret) {
                     //     printf("read not found, Key %lu\n",key);
                     //     continue;
                     // }
-                    // if(val != 123456789) {
+                    // if (val != 123456789) {
                     //     printf("read failed, Key %lu, val %llu\n",key, val);
                     //     exit(1);
                     // }
@@ -371,7 +370,6 @@ public:
     //    });
         auto diff = tn.tsc2ns(end_time) - tn.tsc2ns(start_time);
         printf("Finish running\n");
-
 
         // gather thread local variable
         for (auto &p: params) {
@@ -438,6 +436,7 @@ public:
         if (!file_exists(output_path)) {
             std::ofstream ofile;
             ofile.open(output_path, std::ios::app);
+
             ofile << "id" << ",";
             ofile << "read_ratio" << "," << "insert_ratio" << "," << "update_ratio" << "," << "scan_ratio" << "," << "delete_ratio" << ",";
             ofile << "key_path" << ",";
@@ -466,17 +465,19 @@ public:
 
         std::ofstream ofile;
         ofile.open(output_path, std::ios::app);
+
         if (std::strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", std::localtime(&t))) {
             ofile << time_str << ',';
         }
-        ofile << read_ratio << "," << insert_ratio << "," << update_ratio << "," << scan_ratio << "," << delete_ratio << ",";
 
+        ofile << read_ratio << "," << insert_ratio << "," << update_ratio << "," << scan_ratio << "," << delete_ratio << ",";
         ofile << keys_file_path << ",";
         ofile << index_type << ",";
         ofile << stat.throughput << ",";
         ofile << init_table_size << ",";
         ofile << stat.memory_consumption << ",";
         ofile << thread_num << ",";
+
         if (latency_sample) {
             ofile << stat.latency[0] << ",";
             ofile << stat.latency[0.5 * stat.latency.size()] << ",";
@@ -496,6 +497,7 @@ public:
             ofile << 0 << ",";
             ofile << 0 << ",";
         }
+
         ofile << random_seed << ",";
         ofile << scan_num << ",";
         ofile << latency_variance << ",";
@@ -512,16 +514,18 @@ public:
     void run_benchmark() {
         load_keys();
         generate_operations(keys);
+
         for (auto s: all_index_type) {
             for (auto t: all_thread_num) {
                 thread_num = stoi(t);
                 index_type = s;
                 index_t *index;
+
                 prepare(index, keys);
                 run(index);
+
                 if (index != nullptr) delete index;
             }
         }
     }
-
 };

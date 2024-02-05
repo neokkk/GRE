@@ -16,11 +16,13 @@
 //UNIFORM_MULTIPLY, UNIFORM_INCREASE, NORMAL
 
 namespace pgmMetric {
-  double VARIANCE=10;
+  double VARIANCE = 10;
+
   template<typename T>
   using LargeSigned = typename std::conditional_t<std::is_floating_point_v < T>,
-  long double,
-  std::conditional_t<(sizeof(T) < 8), int64_t, __int128>>;
+                                                  long double,
+                                                  std::conditional_t<(sizeof(T) < 8),
+                                                  int64_t, __int128>>;
 
   // Forward declaration
   template <class T>

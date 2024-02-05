@@ -70,8 +70,7 @@ inline void fence() { asm volatile("" : : : "memory"); }
 
 #endif
 
-inline uint64_t cmpxchg(uint64_t *object, uint64_t expected,
-                        uint64_t desired) {
+inline uint64_t cmpxchg(uint64_t *object, uint64_t expected, uint64_t desired) {
     asm volatile("lock; cmpxchgq %2,%1"
     : "+a"(expected), "+m"(*object)
     : "r"(desired)
@@ -80,8 +79,7 @@ inline uint64_t cmpxchg(uint64_t *object, uint64_t expected,
     return expected;
 }
 
-inline uint8_t cmpxchgb(uint8_t *object, uint8_t expected,
-                        uint8_t desired) {
+inline uint8_t cmpxchgb(uint8_t *object, uint8_t expected, uint8_t desired) {
     asm volatile("lock; cmpxchgb %2,%1"
     : "+a"(expected), "+m"(*object)
     : "r"(desired)
@@ -152,12 +150,12 @@ long long load_binary_data(T *&data, long long length, const std::string &file_p
 
     // read the number of keys
     T max_size;
-    is.read(reinterpret_cast<char*>(&max_size), sizeof(T));
+    is.read(reinterpret_cast<char *>(&max_size), sizeof(T));
 
     std::cout << max_size << std::endl;
 
     // create array
-    if(length < 0 || length > max_size) length = max_size;
+    if (length < 0 || length > max_size) length = max_size;
     data = new T[length];
 
     // read keys
@@ -186,13 +184,14 @@ long long load_text_data(T *&array, long long length, const std::string &file_pa
     }
 
     array = new T[temp_keys.size()];
-    for(int j = 0; j < temp_keys.size(); j++) {
+    for (int j = 0; j < temp_keys.size(); j++) {
         array[j] = temp_keys[j];
     }
     is.close();
     return temp_keys.size();
 }
 
+// uniform random number generator
 template<class T>
 T *get_search_keys(T array[], int num_keys, int num_searches, size_t *seed = nullptr) {
     auto *keys = new T[num_searches];
@@ -213,7 +212,6 @@ T *get_search_keys(T array[], int num_keys, int num_searches, size_t *seed = nul
 
     return keys;
 }
-
 
 bool file_exists(const std::string &str) {
     std::ifstream fs(str);
