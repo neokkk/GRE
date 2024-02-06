@@ -9,7 +9,7 @@
 #include "./hot/hot.h"
 #include "./hot/hotrowex.h"
 #include "./lipp/lipp.h"
-#include "./lippol/lippol.h"
+// #include "./lippol/lippol.h"
 #include "pgm/pgm.h"
 #include "btree/btree.h"
 // #include "wormhole/wormhole.h"
@@ -63,9 +63,9 @@ indexInterface<KEY_TYPE, PAYLOAD_TYPE> *get_index(std::string index_type) {
   else if (index_type == "artunsync") {
     index = new ARTUnsynchronizedInterface<KEY_TYPE, PAYLOAD_TYPE>;
   }
-  else if (index_type == "lippol") {
-    index = new LIPPOLInterface<KEY_TYPE, PAYLOAD_TYPE>;
-  }
+  // else if (index_type == "lippol") {
+  //   index = new LIPPOLInterface<KEY_TYPE, PAYLOAD_TYPE>;
+  // }
   else if (index_type == "lipp") {
     index = new LIPPInterface<KEY_TYPE, PAYLOAD_TYPE>;
   }

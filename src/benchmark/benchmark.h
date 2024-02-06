@@ -26,10 +26,14 @@
 
 template<typename KEY_TYPE, typename PAYLOAD_TYPE>
 class Benchmark {
-    typedef indexInterface <KEY_TYPE, PAYLOAD_TYPE> index_t;
+    typedef indexInterface<KEY_TYPE, PAYLOAD_TYPE> index_t;
 
     enum Operation {
-        READ = 0, INSERT, DELETE, SCAN, UPDATE
+        READ = 0,
+        INSERT,
+        DELETE,
+        SCAN,
+        UPDATE
     };
 
     // parameters
@@ -101,8 +105,7 @@ class Benchmark {
     };
     typedef ThreadParam param_t;
 public:
-    Benchmark() {
-    }
+    Benchmark() {}
 
     KEY_TYPE *load_keys() {
         // Read keys from file
@@ -161,12 +164,19 @@ public:
     inline void prepare(index_t *&index, const KEY_TYPE *keys) {
         index = get_index<KEY_TYPE, PAYLOAD_TYPE>(index_type);
 
-        // initilize Index (sort keys first)
+        // initialize Index (sort keys first)
         Param param = Param(thread_num, 0);
         index->init(&param);
 
         // deal with the background thread case
         thread_num = param.worker_num;
+
+        if (this->scan_ratio == 1) {
+            size_t last_idx = this->keys_file_path.find_last_of("/");
+            std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
+            param.dataset = dataset;
+            std::cout << "dataset: " << dataset << std::endl;
+        }
 
         COUT_THIS("Bulk loading");
         index->bulk_load(init_key_values, init_keys.size(), &param);
