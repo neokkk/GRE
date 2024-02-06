@@ -360,6 +360,12 @@ public:
                     thread_param.success_update += ret;
                 } else if (op == SCAN) { // scan
                     auto scan_len = index->scan(key, scan_num, scan_result, &paramI);
+                    if (this->scan_ratio == 1) {
+                        size_t last_idx = this->keys_file_path.find_last_of("/");
+                        std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
+                        paramI.dataset = dataset;
+                        std::cout << "dataset: " << dataset << std::endl;
+                    }
                     if (scan_len != scan_num) {
                         thread_param.scan_not_enough++;
                     }
