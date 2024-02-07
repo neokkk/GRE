@@ -1,18 +1,19 @@
-#include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <algorithm>
 #include <atomic>
+#include <ctime>
+#include <fstream>
+#include <filesystem>
+#include <getopt.h>
+#include <iostream>
 #include <memory>
 #include <random>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
+#include <sys/types.h>
 #include <thread>
-#include <ctime>
+#include <unistd.h>
+#include <vector>
 
 #include "../tscns.h"
 #include "omp.h"
@@ -162,6 +163,8 @@ public:
     }
 
     inline void prepare(index_t *&index, const KEY_TYPE *keys) {
+        namespace fs = std::filesystem;
+
         index = get_index<KEY_TYPE, PAYLOAD_TYPE>(index_type);
 
         // initialize Index (sort keys first)
@@ -176,6 +179,18 @@ public:
             std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
             param.dataset = dataset;
             std::cout << "dataset: " << dataset << std::endl;
+
+            std::stringstream filename;
+            filename << dataset << "_count.csv";
+
+            try {
+                if (fs::exists(filename.str())) {
+                    fs::remove(filename.str());
+                    std::cout << "success to remove file: " << filename.str() << std::endl;
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "fail to remove file: " <<  e.what() << std::endl;
+            }
         }
 
         COUT_THIS("Bulk loading");
