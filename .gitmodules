@@ -29,6 +29,6 @@
 [submodule "src/competitor/hot/src"]
 	path = src/competitor/hot/src
 	url = https://github.com/speedskater/hot.git
-[submodule "src/competitor/lipp"]
-	path = src/competitor/lipp
+[submodule "src/competitor/lipp/src"]
+	path = src/competitor/lipp/src
 	url = https://github.com/neokkk/lipp.git
