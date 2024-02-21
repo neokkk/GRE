@@ -3,7 +3,7 @@
 set -e
 
 root=$(echo "$0" | awk -F '/' '{print $1}')
-echo "$root"
+echo "root: $root"
 
 output_path=""
 datasets="books history fb osm"

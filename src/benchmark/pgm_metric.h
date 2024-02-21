@@ -37,7 +37,7 @@ namespace pgmMetric {
 
     LinearModel() = default;
     LinearModel(double a, double b) : a_(a), b_(b) {}
-    explicit LinearModel(const LinearModel& other) : a_(other.a_), b_(other.b_) {}
+    explicit LinearModel(const LinearModel &other) : a_(other.a_), b_(other.b_) {}
 
     void expand(double expansion_factor) {
       a_ *= expansion_factor;
@@ -61,9 +61,9 @@ namespace pgmMetric {
   template <class T>
   class LinearModelBuilder {
   public:
-    LinearModel<T>* model_;
+    LinearModel<T> *model_;
 
-    explicit LinearModelBuilder<T>(LinearModel<T>* model) : model_(model) {}
+    explicit LinearModelBuilder<T>(LinearModel<T> *model) : model_(model) {}
 
     inline void reset() {
       count_ = 0;
@@ -183,7 +183,8 @@ namespace pgmMetric {
 
   public:
 
-    explicit OptimalPiecewiseLinearModel(Y epsilon, size_t seed = 2303649288) : epsilon(epsilon), lower(), upper(), mse_model_builder(&mse_model)  {
+    explicit OptimalPiecewiseLinearModel(Y epsilon, size_t seed = 2303649288)
+      : epsilon(epsilon), lower(), upper(), mse_model_builder(&mse_model)  {
       if (epsilon < 0)
         throw std::invalid_argument("epsilon cannot be negative");
 
@@ -196,7 +197,7 @@ namespace pgmMetric {
 
     bool one_point() const {
       return rectangle[0].x == rectangle[2].x && rectangle[0].y == rectangle[2].y
-      && rectangle[1].x == rectangle[3].x && rectangle[1].y == rectangle[3].y;
+        && rectangle[1].x == rectangle[3].x && rectangle[1].y == rectangle[3].y;
     }
 
     std::pair<long double, long double> get_intersection() const {
@@ -215,6 +216,7 @@ namespace pgmMetric {
       auto b = (p0p1.dx * slope2.dy - p0p1.dy * slope2.dx) / static_cast<long double>(a);
       auto i_x = p0.x + b * slope1.dx;
       auto i_y = p0.y + b * slope1.dy;
+
       return {i_x, i_y};
     }
 
@@ -222,13 +224,14 @@ namespace pgmMetric {
       if (one_point())
         return {0, (rectangle[0].y + rectangle[1].y) / 2};
 
-      if constexpr(std::is_integral_v < X > && std::is_integral_v < Y > )
+      if constexpr(std::is_integral_v <X> && std::is_integral_v <Y>)
       {
         auto slope = rectangle[3] - rectangle[1];
         auto intercept_n = slope.dy * (SX(origin) - rectangle[1].x);
         auto intercept_d = slope.dx;
         auto rounding_term = ((intercept_n < 0) ^ (intercept_d < 0) ? -1 : +1) * intercept_d / 2;
         auto intercept = (intercept_n + rounding_term) / intercept_d + rectangle[1].y;
+
         return {static_cast<long double>(slope), intercept};
       }
 
@@ -236,6 +239,7 @@ namespace pgmMetric {
       auto[min_slope, max_slope] = get_slope_range();
       auto slope = (min_slope + max_slope) / 2.;
       auto intercept = i_y - (i_x - origin) * slope;
+
       return {slope, intercept};
     }
 
@@ -245,14 +249,15 @@ namespace pgmMetric {
 
       auto min_slope = static_cast<long double>(rectangle[2] - rectangle[0]);
       auto max_slope = static_cast<long double>(rectangle[3] - rectangle[1]);
+
       return {min_slope, max_slope};
     }
 
     uint64_t generate_key() {
       uint64_t rank = last_rank + 1;
-
       uint64_t key;
       uint64_t max_key, min_key;
+
       if (points_in_hull == 1) {
 #ifdef UNIFORM_MULTIPLY
         std::uniform_int_distribution <uint64_t> key_gen(last_x + 1, (last_x + 1) * MUL_BOUND);
@@ -264,7 +269,6 @@ namespace pgmMetric {
         std::normal_distribution<> key_gen{0,VARIANCE};
         key = last_x + 1 + std::round(std::fabs(key_gen(gen)));
 #endif
-
       } else {
         double slope02 = (rectangle[2].y * 1.0 - rectangle[0].y * 1.0) / (rectangle[2].x * 1.0 - rectangle[0].x * 1.0);
         double intercept02 = rectangle[2].y * 1.0 - slope02 * rectangle[2].x * 1.0;
@@ -273,6 +277,7 @@ namespace pgmMetric {
 
         max_key = std::numeric_limits<uint64_t>::max();
         min_key = std::numeric_limits<uint64_t>::min();
+
         if (slope02 > 0) {
           max_key = ((rank + epsilon) - intercept02) / slope02;
 //          max_key = (rank - intercept02) / slope02;
@@ -287,6 +292,7 @@ namespace pgmMetric {
         min_key = (rank * 1.0 - epsilon * 1.0) - intercept13 * 1.0 <= 0 ? 0 :
                   ((rank * 1.0 - epsilon * 1.0) - intercept13 * 1.0) / slope13;
         min_key = min_key >= last_x + 1 ? min_key : last_x + 1;
+
 #ifdef UNIFORM_MULTIPLY
         std::uniform_int_distribution <uint64_t> key_gen(min_key, max_key);
         key = key_gen(gen);
@@ -362,6 +368,7 @@ namespace pgmMetric {
         // Find extreme slope
         auto min = lower[lower_start] - p1;
         auto min_i = lower_start;
+
         for (auto i = lower_start + 1; i < lower.size(); i++) {
           auto val = lower[i] - p1;
           if (val > min)
@@ -376,6 +383,7 @@ namespace pgmMetric {
 
         // Hull update
         auto end = upper.size();
+
         for (; end >= upper_start + 2 && cross(upper[end - 2], upper[end - 1], p1) <= 0; --end)
           continue;
         upper.resize(end);
@@ -386,6 +394,7 @@ namespace pgmMetric {
         // Find extreme slope
         auto max = upper[upper_start] - p2;
         auto max_i = upper_start;
+
         for (auto i = upper_start + 1; i < upper.size(); i++) {
           auto val = upper[i] - p2;
           if (val < max)
@@ -400,6 +409,7 @@ namespace pgmMetric {
 
         // Hull update
         auto end = lower.size();
+
         for (; end >= lower_start + 2 && cross(lower[end - 2], lower[end - 1], p2) >= 0; --end)
           continue;
         lower.resize(end);
@@ -425,14 +435,15 @@ namespace pgmMetric {
       uint64_t intercept = model_pair.second;
 
       long double sum = 0;
-
       int counter = 0;
+
       for (auto point : points) {
         counter++;
         auto predict_pos = (int64_t)(slope * (point.first - first_x)) + intercept;
         auto val = predict_pos - point.second;
         sum += val * val;
       }
+      
       return sum / counter;
     }
   };
@@ -444,10 +455,11 @@ namespace pgmMetric {
     size_t metric = 1;
     double mse_sum = 0;
     double max = 0;
-    for(auto i = 0; i < key_num; i++) {
-      if(!segment.add_point(keys[i], i)) {
+
+    for (auto i = 0; i < key_num; i++) {
+      if (!segment.add_point(keys[i], i)) {
         metric++;
-        if(mse) {
+        if (mse) {
           auto mse_segment = segment.get_mse_metric();
           mse_sum += mse_segment;
         }
@@ -456,7 +468,7 @@ namespace pgmMetric {
       }
     }
 
-    if(mse) {
+    if (mse) {
 //      std::cout << mse_sum << " " << metric << " " << max << std::endl;
       *mse = mse_sum / metric;
     }
@@ -471,21 +483,22 @@ namespace pgmMetric {
     size_t model = 0;
     double sum = 0;
     size_t seg_count = 0;
-    for(auto i = 0; i < key_num; i++) {
-      if(i % count == 0) {
+
+    for (auto i = 0; i < key_num; i++) {
+      if (i % count == 0) {
         seg_count++;
         sum += model + 1;
         model = 0;
         segment.reset();
       }
-      if(!segment.add_point(keys[i], i)) {
+      if (!segment.add_point(keys[i], i)) {
         model++;
         segment.reset();
         segment.add_point(keys[i], i);
       }
     }
 
-    return (double) model / (double) seg_count;
+    return (double)model / (double)seg_count;
   }
 
   void PGM_metric_data_generator(uint64_t *array, int data_num, int model_num, int error_bound = 64,
@@ -498,6 +511,7 @@ namespace pgmMetric {
 
     optimal_segment.reset();
     optimal_segment.add_point(0, 1);
+
     for (int i = 0; i < model_num; i++) {
       for (int j = 1; j < data_num_every_model; j++) {
         uint64_t key = optimal_segment.generate_key();
@@ -512,7 +526,6 @@ namespace pgmMetric {
       optimal_segment.reset();
       optimal_segment.add_point(new_key, rank + 1);
 
-
       if (i == model_num - 1) {
         for (int j = 0; j < data_num - data_num_every_model * model_num; j++) {
           uint64_t key = optimal_segment.generate_key();
@@ -522,6 +535,7 @@ namespace pgmMetric {
         }
       }
     }
+
     std::shuffle(array, array + data_num, gen);
     if (output_path.size() > 0) {
       std::fstream file(output_path, std::ios::out | std::ios::binary);
@@ -551,10 +565,10 @@ namespace pgmMetric {
     std::normal_distribution<> error{mean,sqrt(variance)};
     std::uniform_int_distribution<int> int_gen();
 
-
     for (int i = 0; i < model_num; i++) {
       slope = std::fabs(slope_gen(gen));
       LinearModel<uint64_t> model(slope, intercept);
+
       for (int j = 1; j < data_num_every_model; j++) {
         uint64_t rank = i * data_num_every_model + j;
         uint64_t key = model.predict(j);
@@ -567,7 +581,7 @@ namespace pgmMetric {
         mse_sum += rank_error * rank_error;
 
         key = key_error % 2 == 0 ? key + key_error : key - key_error;
-        if(key > max_key || key < min_key + 1) {
+        if (key > max_key || key < min_key + 1) {
           key = min_key + 1;
         }
 
@@ -575,8 +589,8 @@ namespace pgmMetric {
         array[rank] = key;
         optimal_segment.add_point(key, rank + 1);
       }
-      uint64_t rank = (i + 1) * data_num_every_model;
 
+      uint64_t rank = (i + 1) * data_num_every_model;
       uint64_t new_key = optimal_segment.generate_key_out_of_bound();
       min_key = new_key+1;
       max_key = std::numeric_limits<uint64_t>::max();
@@ -593,11 +607,11 @@ namespace pgmMetric {
         }
       }
     }
+
     size_t pgm = PGM_metric(array, data_num, error_bound, &mse);
 //    mse = mse_sum / data_num;
     std::cout << pgm << " " << mse << std::endl;
     std::shuffle(array, array + data_num, gen);
-
 
     if (output_path.size() > 0) {
       std::fstream file(output_path, std::ios::out | std::ios::binary);
@@ -605,9 +619,6 @@ namespace pgmMetric {
       file.close();
     }
   }
-
-
 }
-
 
 #endif //SCALABLE_INDEX_DATA_GENERATOR_H

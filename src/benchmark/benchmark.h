@@ -156,6 +156,7 @@ public:
             init_key_values[i].first = init_keys[i];
             init_key_values[i].second = 123456789;
         }
+        
         COUT_VAR(table_size);
         COUT_VAR(init_keys.size());
 
@@ -180,17 +181,17 @@ public:
             param.dataset = dataset;
             std::cout << "dataset: " << dataset << std::endl;
 
-            std::stringstream filename;
-            filename << dataset << "_count.csv";
+            // std::stringstream filename;
+            // filename << dataset << "_count.csv";
 
-            try {
-                if (fs::exists(filename.str())) {
-                    fs::remove(filename.str());
-                    std::cout << "success to remove file: " << filename.str() << std::endl;
-                }
-            } catch (const std::exception &e) {
-                std::cerr << "fail to remove file: " <<  e.what() << std::endl;
-            }
+            // try {
+            //     if (fs::exists(filename.str())) {
+            //         fs::remove(filename.str());
+            //         std::cout << "success to remove file: " << filename.str() << std::endl;
+            //     }
+            // } catch (const std::exception &e) {
+            //     std::cerr << "fail to remove file: " <<  e.what() << std::endl;
+            // }
         }
 
         COUT_THIS("Bulk loading");
@@ -284,6 +285,7 @@ public:
         size_t temp_counter = 0;
         for (size_t i = 0; i < operations_num; ++i) {
             auto prob = ratio_dis(gen);
+            
             if (prob < read_ratio) {
                 // if (temp_counter >= table_size) {
                 //     operations_num = i;
@@ -379,7 +381,7 @@ public:
                         size_t last_idx = this->keys_file_path.find_last_of("/");
                         std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
                         paramI.dataset = dataset;
-                        std::cout << "dataset: " << dataset << std::endl;
+                        // std::cout << "dataset: " << dataset << std::endl;
                     }
                     if (scan_len != scan_num) {
                         thread_param.scan_not_enough++;
@@ -416,6 +418,7 @@ public:
             stat.success_remove += p.success_remove;
             stat.scan_not_enough += p.scan_not_enough;
         }
+        
         // calculate throughput
         stat.throughput = static_cast<uint64_t>(operations_num / (diff/(double) 1000000000));
 
