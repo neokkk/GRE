@@ -6,9 +6,14 @@ root=$(dirname $(dirname "$0"))
 echo "root: $root"
 
 output_path=""
-datasets="books history face osm"
-inserts="0 0.5 1"
-op_num=1000000
+datasets="face osm"
+inserts=""
+for i in $(seq 0 0.1 1); do
+  inserts="$inserts $i"
+done
+echo "inserts: $inserts"
+
+op_num=10000000
 table_size=100000000
 
 for dataset in $datasets; do
