@@ -6,6 +6,8 @@ struct Param { // for xindex
   size_t worker_num;
   uint32_t thread_id;
   std::string dataset = "";
+  int num_items;
+  std::vector<std::pair<int, int>> gap_counts;
 
   Param(size_t worker_num, uint32_t thread_id) : worker_num(worker_num), thread_id(thread_id) {}
   Param(size_t worker_num, uint32_t thread_id, const std::string &dataset) : Param{worker_num, thread_id} {
@@ -42,4 +44,6 @@ public:
   virtual void init(Param *param = nullptr) = 0;
 
   virtual long long memory_consumption() = 0; // bytes
+
+  virtual unsigned int rebuild_count() { return 0; }
 };

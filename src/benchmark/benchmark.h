@@ -64,6 +64,8 @@ class Benchmark {
     bool memory_record;
     bool dataset_statistic;
     bool data_shift = false;
+    int num_items = -1;
+    std::vector<std::pair<int, int>> gap_counts;
 
     std::vector<KEY_TYPE> init_keys;
     KEY_TYPE *keys;
@@ -81,6 +83,7 @@ class Benchmark {
         uint64_t success_update = 0;
         uint64_t success_remove = 0;
         uint64_t scan_not_enough = 0;
+        uint64_t num_rebuild = 0;
 
         void clear() {
             latency.clear();
@@ -92,6 +95,7 @@ class Benchmark {
             success_update = 0;
             success_remove = 0;
             scan_not_enough = 0;
+            num_rebuild = 0;
         }
     } stat;
 
@@ -170,6 +174,12 @@ public:
 
         // initialize Index (sort keys first)
         Param param = Param(thread_num, 0);
+
+        if (index_type == "lipp") {
+            param.num_items = num_items;
+            param.gap_counts = gap_counts;
+        }
+
         index->init(&param);
 
         // deal with the background thread case
@@ -181,17 +191,17 @@ public:
             param.dataset = dataset;
             std::cout << "dataset: " << dataset << std::endl;
 
-            // std::stringstream filename;
-            // filename << dataset << "_count.csv";
+            std::stringstream filename;
+            filename << dataset << "_count.csv";
 
-            // try {
-            //     if (fs::exists(filename.str())) {
-            //         fs::remove(filename.str());
-            //         std::cout << "success to remove file: " << filename.str() << std::endl;
-            //     }
-            // } catch (const std::exception &e) {
-            //     std::cerr << "fail to remove file: " <<  e.what() << std::endl;
-            // }
+            try {
+                if (fs::exists(filename.str())) {
+                    fs::remove(filename.str());
+                    std::cout << "success to remove file: " << filename.str() << std::endl;
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "fail to remove file: " <<  e.what() << std::endl;
+            }
         }
 
         COUT_THIS("Bulk loading");
@@ -207,7 +217,7 @@ public:
    * update_ratio         the ratio of update operation
    * scan_ratio           the ratio of scan operation
    * scan_num             the number of keys that every scan operation need to scan
-   * operations_num      the number of operations(read, insert, delete, update, scan)
+   * operations_num       the number of operations(read, insert, delete, update, scan)
    * table_size           the total number of keys in key file
    * init_table_size      the number of keys that will be used in bulk loading
    * thread_num           the number of worker thread
@@ -219,6 +229,11 @@ public:
   */
     inline void parse_args(int argc, char **argv) {
         auto flags = parse_flags(argc, argv);
+        auto gap_counts_ = get_pair_comma_separated(flags, "gap_counts");
+        for (auto &p : gap_counts_) {
+            std::cout << p.first << " " << p.second << std::endl;
+            gap_counts.push_back(std::make_pair(stoi(p.first), stoi(p.second)));
+        }
         keys_file_path = get_required(flags, "keys_file"); // required
         keys_file_type = get_with_default(flags, "keys_file_type", "binary");
         read_ratio = stod(get_required(flags, "read")); // required
@@ -245,11 +260,11 @@ public:
         dataset_statistic = get_boolean_flag(flags, "dataset_statistic");
         data_shift = get_boolean_flag(flags, "data_shift");
 
-        COUT_THIS("[Micro] Read:Insert:Update:Scan:Delete= " << read_ratio << ":" << insert_ratio << ":" << update_ratio << ":"
+        COUT_THIS("[Micro] Read:Insert:Update:Scan:Delete=" << read_ratio << ":" << insert_ratio << ":" << update_ratio << ":"
                                                       << scan_ratio << ":" << delete_ratio);
         double ratio_sum = read_ratio + insert_ratio + delete_ratio + update_ratio + scan_ratio;
         double insert_delete = insert_ratio + delete_ratio;
-        INVARIANT(insert_delete == insert_ratio || insert_delete == delete_ratio);
+        // INVARIANT(insert_delete == insert_ratio || insert_delete == delete_ratio);
         INVARIANT(ratio_sum > 0.9999 && ratio_sum < 1.0001);  // avoid precision lost
         INVARIANT(sample_distribution == "zipf" || sample_distribution == "uniform");
         INVARIANT(all_thread_num.size() > 0);
@@ -432,6 +447,8 @@ public:
         if (memory_record)
             stat.memory_consumption = index->memory_consumption();
 
+        stat.num_rebuild = index->rebuild_count();
+
         print_stat();
 
         delete[] thread_array;
@@ -493,8 +510,10 @@ public:
             ofile << "latency_sample" << ",";
             ofile << "data_shift" << ",";
             ofile << "pgm" << ",";
-            ofile << "error_bound" ",";
-            ofile << "table_size" << std::endl;
+            ofile << "error_bound" << ",";
+            ofile << "table_size" << ",";
+            ofile << "num_rebuild";
+            ofile << std::endl;
         }
 
         std::ofstream ofile;
@@ -539,7 +558,10 @@ public:
         ofile << data_shift << ",";
         ofile << stat.fitness_of_dataset << ",";
         ofile << error_bound << ",";
-        ofile << table_size << std::endl;
+        ofile << table_size << ",";
+        ofile << stat.num_rebuild;
+        ofile << std::endl;
+
         ofile.close();
 
         if (clear_flag) stat.clear();
