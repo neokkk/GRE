@@ -64,7 +64,7 @@ class Benchmark {
     bool memory_record;
     bool dataset_statistic;
     bool data_shift = false;
-    int num_items = -1;
+    int num_items;
     std::vector<std::pair<int, int>> gap_counts;
 
     std::vector<KEY_TYPE> init_keys;
@@ -164,6 +164,10 @@ public:
         COUT_VAR(table_size);
         COUT_VAR(init_keys.size());
 
+	for (int i = 0; i < 10; i++)
+		std::cout << keys[i] << " ";
+	std::cout << std::endl;
+
         return keys;
     }
 
@@ -185,24 +189,24 @@ public:
         // deal with the background thread case
         thread_num = param.worker_num;
 
-        if (this->scan_ratio == 1) {
-            size_t last_idx = this->keys_file_path.find_last_of("/");
-            std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
-            param.dataset = dataset;
-            std::cout << "dataset: " << dataset << std::endl;
+        // if (this->scan_ratio == 1) {
+        //     size_t last_idx = this->keys_file_path.find_last_of("/");
+        //     std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
+        //     param.dataset = dataset;
+        //     std::cout << "dataset: " << dataset << std::endl;
 
-            std::stringstream filename;
-            filename << dataset << "_count.csv";
+        //     std::stringstream filename;
+        //     filename << dataset << "_count.csv";
 
-            try {
-                if (fs::exists(filename.str())) {
-                    fs::remove(filename.str());
-                    std::cout << "success to remove file: " << filename.str() << std::endl;
-                }
-            } catch (const std::exception &e) {
-                std::cerr << "fail to remove file: " <<  e.what() << std::endl;
-            }
-        }
+        //     try {
+        //         if (fs::exists(filename.str())) {
+        //             fs::remove(filename.str());
+        //             std::cout << "success to remove file: " << filename.str() << std::endl;
+        //         }
+        //     } catch (const std::exception &e) {
+        //         std::cerr << "fail to remove file: " <<  e.what() << std::endl;
+        //     }
+        // }
 
         COUT_THIS("Bulk loading");
         index->bulk_load(init_key_values, init_keys.size(), &param);
@@ -234,6 +238,7 @@ public:
             std::cout << p.first << " " << p.second << std::endl;
             gap_counts.push_back(std::make_pair(stoi(p.first), stoi(p.second)));
         }
+        num_items = stoi(get_with_default(flags, "num_items", "8"));
         keys_file_path = get_required(flags, "keys_file"); // required
         keys_file_type = get_with_default(flags, "keys_file_type", "binary");
         read_ratio = stod(get_required(flags, "read")); // required
@@ -427,6 +432,7 @@ public:
                     stat.latency.push_back(tn.tsc2ns(e.second) - tn.tsc2ns(e.first));
                 }
             }
+            
             stat.success_read += p.success_read;
             stat.success_insert += p.success_insert;
             stat.success_update += p.success_update;
@@ -447,11 +453,23 @@ public:
         if (memory_record)
             stat.memory_consumption = index->memory_consumption();
 
-        stat.num_rebuild = index->rebuild_count();
+        if (index_type == "lipp")
+            stat.num_rebuild = index->rebuild_count();
 
         print_stat();
 
         delete[] thread_array;
+    }
+
+    void print(index_t *index) {
+        auto paramI = Param(thread_num, 0);
+        if (this->scan_ratio == 1) {
+            size_t last_idx = this->keys_file_path.find_last_of("/");
+            std::string dataset = last_idx == std::string::npos ? this->keys_file_path : this->keys_file_path.substr(last_idx + 1);
+            paramI.dataset = dataset;
+            std::cout << "dataset: " << dataset << std::endl;
+        }
+        index->print_(&paramI);
     }
 
     void print_stat(bool header = false, bool clear_flag = true) {
@@ -511,8 +529,12 @@ public:
             ofile << "data_shift" << ",";
             ofile << "pgm" << ",";
             ofile << "error_bound" << ",";
-            ofile << "table_size" << ",";
-            ofile << "num_rebuild";
+            ofile << "table_size";
+
+            if (index_type == "lipp") {
+                ofile << ",num_rebuild";
+            }
+
             ofile << std::endl;
         }
 
@@ -558,10 +580,14 @@ public:
         ofile << data_shift << ",";
         ofile << stat.fitness_of_dataset << ",";
         ofile << error_bound << ",";
-        ofile << table_size << ",";
-        ofile << stat.num_rebuild;
-        ofile << std::endl;
+        ofile << table_size;
+        
+        if (index_type == "lipp") {
+            ofile << ",";
+            ofile << stat.num_rebuild;
+        }
 
+        ofile << std::endl;
         ofile.close();
 
         if (clear_flag) stat.clear();
@@ -579,6 +605,7 @@ public:
 
                 prepare(index, keys);
                 run(index);
+                print(index);
 
                 if (index != nullptr) delete index;
             }

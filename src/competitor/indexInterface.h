@@ -6,7 +6,7 @@ struct Param { // for xindex
   size_t worker_num;
   uint32_t thread_id;
   std::string dataset = "";
-  int num_items;
+  int num_items = -1;
   std::vector<std::pair<int, int>> gap_counts;
 
   Param(size_t worker_num, uint32_t thread_id) : worker_num(worker_num), thread_id(thread_id) {}
@@ -28,6 +28,8 @@ struct BaseCompare {
 
 template<class KEY_TYPE, class PAYLOAD_TYPE, class KeyComparator=BaseCompare>
 class indexInterface {
+  int num_rebuild = 0;
+
 public:
   virtual void bulk_load(std::pair<KEY_TYPE, PAYLOAD_TYPE> *key_value, size_t num, Param *param = nullptr) = 0;
 
@@ -45,5 +47,7 @@ public:
 
   virtual long long memory_consumption() = 0; // bytes
 
-  virtual unsigned int rebuild_count() { return 0; }
+  unsigned int rebuild_count() { return num_rebuild; }
+
+  virtual void print_(Param *param = nullptr) {}
 };

@@ -4,7 +4,21 @@
 template<class KEY_TYPE, class PAYLOAD_TYPE>
 class LIPPInterface : public indexInterface<KEY_TYPE, PAYLOAD_TYPE> {
 public:
-    void init(Param *param = nullptr) {}
+    void init(Param *param = nullptr) {
+        if (param) {
+            if (param->num_items > 0) {
+                lipp.default_num_items = param->num_items;
+                std::cout << "Set default_num_items to " << lipp.default_num_items << std::endl;
+            }
+            if (!param->gap_counts.empty()) {
+                lipp.gap_counts = param->gap_counts;
+                auto last = lipp.gap_counts.back();
+                std::cout << "Set gap_counts to " << last.second << std::endl;
+            }
+        }
+
+        lipp.init();
+    }
 
     void bulk_load(std::pair<KEY_TYPE, PAYLOAD_TYPE> *key_value, size_t num, Param *param = nullptr);
 
@@ -19,6 +33,12 @@ public:
     size_t scan(KEY_TYPE key_low_bound, size_t key_num, std::pair<KEY_TYPE, PAYLOAD_TYPE> *result, Param *param = nullptr);
 
     long long memory_consumption() { return lipp.total_size(); }
+
+    unsigned int rebuild_count() { return lipp.num_rebuild; }
+
+    void print_(Param *param = nullptr) override {
+        lipp.print(param->dataset);
+    }
 
 private:
     LIPP<KEY_TYPE, PAYLOAD_TYPE> lipp;
